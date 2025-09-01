@@ -1,0 +1,75 @@
+/* Make the container a transparent, positioned strip */
+.toolbar-container {
+    position: fixed;
+    left: 10px;
+    top: 20px;
+    z-index: 1002;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background-color: rgba(44, 44, 44, 0.6);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 8px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.toolbar-button {
+    background: transparent;
+    border: none;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    padding: 10px;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.75em;
+    width: 65px;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.toolbar-button:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--color-text-primary);
+}
+
+.toolbar-button svg {
+    font-size: 1.5em;
+}
+
+.toolbar-button.is-active {
+    background-color: rgba(0, 122, 255, 0.25);
+    color: #009dff;
+}
+
+/* New Styles for Route Planner */
+.color-palette {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-top: 8px;
+    margin-top: 8px;
+    border-top: 1px solid var(--color-border);
+}
+
+.color-swatch {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.color-swatch:hover {
+    transform: scale(1.1);
+}
+
+.color-swatch.selected {
+    border-color: #fff;
+    transform: scale(1.2);
+}

@@ -1,0 +1,90 @@
+/* frontend/src/components/Timelapse/TimelapseControls.css */
+.timelapse-controls-container {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80%;
+    z-index: 1002;
+    background-color: rgba(44, 44, 44, 0.7);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 10px 20px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.3);
+    flex-wrap: wrap; /* Allows items to wrap to the next line on small screens */
+    justify-content: center;
+}
+
+.play-pause-btn {
+    background: none;
+    border: none;
+    color: var(--color-text-primary);
+    font-size: 1.2em;
+    cursor: pointer;
+}
+
+.timeline-slider {
+    flex-grow: 1; /* Allows the slider to take up available space */
+    min-width: 150px; /* Ensures it doesn't get too small before wrapping */
+}
+
+.timeline-date {
+    color: var(--color-text-secondary);
+    font-size: 0.9em;
+    min-width: 150px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+}
+
+.speed-controls {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background-color: rgba(0,0,0,0.2);
+    padding: 4px;
+    border-radius: 8px;
+}
+
+.speed-btn {
+    background: transparent;
+    border: none;
+    color: var(--color-text-secondary);
+    padding: 4px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.2s ease;
+}
+
+.speed-btn:hover {
+    background-color: rgba(255,255,255,0.1);
+    color: var(--color-text-primary);
+}
+
+.speed-btn.active {
+    background-color: var(--color-secondary);
+    color: white;
+}
+
+.date-selector-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.date-selector-container label {
+    font-size: 0.9em;
+    color: var(--color-text-secondary);
+}
+
+.date-selector-container select {
+    background-color: var(--color-surface);
+    color: var(--color-text-primary);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    padding: 4px 8px;
+}

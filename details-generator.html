@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>City Details Generator</title>
+    <style>
+        body { font-family: sans-serif; display: flex; gap: 20px; margin: 15px; }
+        .column { display: flex; flex-direction: column; flex: 1; }
+        h2, h3 { border-bottom: 1px solid #ccc; padding-bottom: 5px; }
+        textarea { width: 98%; margin-bottom: 10px; font-family: monospace; }
+        button { margin-top: 5px; padding: 10px 15px; font-size: 1.1em; cursor: pointer; }
+        label { font-weight: bold; margin-bottom: 5px; display: block; }
+        #output-column { background-color: #f0f0f0; padding: 15px; border-radius: 8px;}
+    </style>
+</head>
+<body>
+
+    <div class="column" id="input-column">
+        <h2>1. Paste Input Data</h2>
+
+        <label for="cityDataInput">Master City Data (from test.json):</label>
+        <textarea id="cityDataInput" rows="8" placeholder="Paste the full content of test.json here..."></textarea>
+
+        <label for="npcDataInput">NPC Advantage Data (from website):</label>
+        <textarea id="npcDataInput" rows="15" placeholder="Paste the entire NPC battle advantage text here..."></textarea>
+
+        <label for="rewardDataInput">Sovereignty Reward Data (from website):</label>
+        <textarea id="rewardDataInput" rows="10" placeholder="Paste the sovereignty reward list here..."></textarea>
+
+        <button id="generateBtn">Generate City Details JSON</button>
+    </div>
+
+    <div class="column" id="output-column">
+        <h2>2. Generated Output</h2>
+        <label for="outputJson">cityDetails.json:</label>
+        <textarea id="outputJson" rows="35" readonly></textarea>
+        <small>Save this output as `cityDetails.json` in your backend's `src/data/` directory.</small>
+    </div>
+
+    <script>
+        // --- DATA MAPPINGS ---
+        const NATION_CODE_MAP = { "台灣": "TW", "蒙古": "MG", "香港": "HK", "反賊": "RB", "紅軍": "CM", "滿洲": "MC", "西藏": "TB", "哈薩克": "KZ", "維吾爾": "UG" };
+        const REWARD_KEY_MAP = { "動員力": "Money", "能量石": "Energy", "紅1": "R1", "紅2": "R2", "紅3": "R3", "黃1": "Y1", "黃2": "Y2", "黃3": "Y3", "藍1": "B1", "藍2": "B2", "藍3": "B3", "綠1": "G1", "綠2": "G2", "綠3": "G3" };
+
+        // --- DOM REFERENCES ---
+        const cityDataInput = document.getElementById('cityDataInput');
+        const npcDataInput = document.getElementById('npcDataInput');
+        const rewardDataInput = document.getElementById('rewardDataInput');
+        const generateBtn = document.getElementById('generateBtn');
+        const outputJson = document.getElementById('outputJson');
+
+        // --- CORE LOGIC ---
+        function cleanCityName(name) {
+            // Removes parentheses and their content, e.g., "烏蘭烏德（布里亞特）" -> "烏蘭烏德"
+            return name.replace(/（[^）]+）/g, '').trim();
+        }
+
+        function parseNpcData(npcText) {
+            const cityNpcMap = new Map();
+            const sections = npcText.split('=================================');
+            let currentNation = null;
+
+            for (const section of sections) {
+                const lines = section.trim().split('\n');
+                if (lines.length === 0) continue;
+
+                // Find the nation name from the section
+                const nationNameLine = lines.find(line => Object.keys(NATION_CODE_MAP).some(key => line.includes(key)));
+                if (nationNameLine) {
+                    const nationName = Object.keys(NATION_CODE_MAP).find(key => nationNameLine.includes(key));
+                    currentNation = NATION_CODE_MAP[nationName];
+                }
+                
+                if (!currentNation) continue;
+
+                // Process cities in this section
+                lines.forEach(line => {
+                    if (line.includes('戰鬥優勢城鎮')) return;
+                    const cities = line.split(/[\s　]+/); // Split by space or full-width space
+                    cities.forEach(rawCityName => {
+                        const cityName = cleanCityName(rawCityName);
+                        if (!cityName) return;
+
+                        if (!cityNpcMap.has(cityName)) {
+                            cityNpcMap.set(cityName, new Set());
+                        }
+                        cityNpcMap.get(cityName).add(currentNation);
+                    });
+                });
+            }
+             // Convert Sets to Arrays
+            const finalMap = new Map();
+            for (const [city, npcSet] of cityNpcMap.entries()) {
+                finalMap.set(city, Array.from(npcSet));
+            }
+            return finalMap;
+        }
+
+        function parseRewardData(rewardText) {
+            const sovereigntyRewardMap = new Map();
+            const lines = rewardText.trim().split('\n');
+            
+            lines.forEach(line => {
+                const [sovereignty, rewardsStr] = line.split(':');
+                if (!sovereignty || !rewardsStr) return;
+
+                const rewardObj = {};
+                const rewardParts = rewardsStr.split(',');
+
+                rewardParts.forEach(part => {
+                    const matches = part.trim().match(/(\d+)\s*([\u4e00-\u9fa5]+\d?)/);
+                    if (matches) {
+                        const value = parseInt(matches[1], 10);
+                        const key = REWARD_KEY_MAP[matches[2]];
+                        if (key) {
+                            rewardObj[key] = value;
+                        }
+                    }
+                });
+                sovereigntyRewardMap.set(sovereignty.trim(), rewardObj);
+            });
+            return sovereigntyRewardMap;
+        }
+
+        generateBtn.addEventListener('click', () => {
+            try {
+                const allCities = JSON.parse(cityDataInput.value);
+                const cityNpcMap = parseNpcData(npcDataInput.value);
+                const sovereigntyRewardMap = parseRewardData(rewardDataInput.value);
+                
+                const finalDetails = {};
+
+                allCities.forEach(city => {
+                    const cityDetail = {};
+
+                    // 1. Get NPCs
+                    const npcs = cityNpcMap.get(city.name);
+                    if (npcs && npcs.length > 0) {
+                        cityDetail.npc = npcs;
+                    }
+
+                    // 2. Get Rewards
+                    const rewards = sovereigntyRewardMap.get(city.sovereign);
+                    if (rewards && Object.keys(rewards).length > 0) {
+                        cityDetail.rewards = rewards;
+                    }
+
+                    if (Object.keys(cityDetail).length > 0) {
+                        finalDetails[city.id] = cityDetail;
+                    }
+                });
+                
+                outputJson.value = JSON.stringify(finalDetails, null, 2);
+                alert('JSON generated successfully!');
+
+            } catch (e) {
+                alert('An error occurred. Please check your input JSON and try again.\nError: ' + e.message);
+                console.error(e);
+            }
+        });
+    </script>
+</body>
+</html>

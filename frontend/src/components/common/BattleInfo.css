@@ -1,0 +1,37 @@
+.battle-indicator {
+  position: absolute;
+  top: -25px; /* Position it above the city icon */
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  background-color: rgba(0, 0, 0, 0.7);
+  padding: 2px 5px;
+  border-radius: 4px;
+  border: 1px solid #ff4d4d;
+  box-shadow: 0 0 8px #ff4d4d;
+  white-space: nowrap;
+}
+
+.attacker-icon {
+  width: 16px;
+  height: 16px;
+  margin-right: 5px;
+  border-radius: 50%;
+}
+
+.battle-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 10px;
+  color: white;
+}
+
+.battle-phase {
+  font-weight: bold;
+}
+
+.battle-score {
+  color: #ffc107;
+}

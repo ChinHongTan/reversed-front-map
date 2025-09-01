@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Path & City Details Editor</title>
+    <style>
+        body { font-family: sans-serif; display: flex; margin: 10px; }
+        #controls { width: 350px; padding-right: 20px; border-right: 1px solid #ccc; max-height: 95vh; overflow-y: auto; }
+        #mapArea { flex-grow: 1; position: relative; }
+        canvas { border: 1px solid black; cursor: crosshair; }
+        textarea { width: 95%; margin-bottom: 10px; }
+        button { margin-top: 5px; margin-right: 5px; padding: 5px 10px; }
+        label { display: block; margin-top: 10px; font-weight: bold; }
+        .selected-city { font-weight: bold; color: blue; }
+        #connectionList { list-style-type: none; padding: 0; max-height: 200px; overflow-y: auto; border: 1px solid #eee; }
+        #connectionList li { padding: 3px; border-bottom: 1px solid #eee; font-size: 0.9em; }
+        .editor-section { border: 1px solid #ddd; padding: 10px; margin-top: 15px; border-radius: 5px; }
+        .hidden { display: none; }
+        .npc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
+        .reward-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+        .reward-grid label { font-weight: normal; }
+    </style>
+</head>
+<body>
+    <div id="controls">
+        <h2>Editor Controls</h2>
+        
+        <div class="editor-section">
+            <label for="cityDataInput">1. Paste City Data (JSON Array):</label>
+            <textarea id="cityDataInput" rows="5" placeholder='[{"id":1,"name":"CityA","x_position":100,"y_position":100}, ...]'></textarea>
+            <button id="loadCitiesBtn">Load & Render Cities</button>
+        </div>
+
+        <div class="editor-section">
+            <label>2. Path Editor</label>
+            <div>Selected: <span id="selectedCity1Display">-</span> &rarr; <span id="selectedCity2Display">-</span></div>
+            <label for="connectionType" style="font-weight: normal; margin-top: 5px;">Connection Type:</label>
+            <select id="connectionType">
+                <option value="rail">Rail</option><option value="road">Road</option><option value="air">Air</option><option value="sea">Sea</option>
+            </select>
+            <button id="addConnectionBtn" disabled>Add Connection</button>
+            <button id="clearSelectionBtn">Clear Selection</button>
+        </div>
+
+        <div id="city-details-editor" class="editor-section hidden">
+            <label>3. Details for <span id="editingCityName" class="selected-city"></span></label>
+            
+            <label for="npc-selector">NPCs Present:</label>
+            <div id="npc-selector" class="npc-grid"></div>
+
+            <label for="rewards-editor">Rewards:</label>
+            <div id="rewards-editor" class="reward-grid"></div>
+
+            <button id="updateCityDetailsBtn">Update City Details</button>
+        </div>
+
+        <hr>
+        
+        <label for="pathDataOutput">Path Data Output (JSON):</label>
+        <textarea id="pathDataOutput" rows="8" readonly></textarea>
+        <button id="generatePathJsonBtn">Generate Path JSON</button>
+
+        <label for="cityDetailsOutput">City Details Output (JSON):</label>
+        <textarea id="cityDetailsOutput" rows="8" readonly></textarea>
+        <button id="generateCityDetailsJsonBtn">Generate City Details JSON</button>
+    </div>
+
+    <div id="mapArea">
+        <canvas id="cityCanvas"></canvas>
+    </div>
+
+    <script>
+        // --- DATA DEFINITIONS ---
+        const NPC_DEFINITIONS = {
+            "TW": { name: "台灣", power: 1000 }, "MG": { name: "蒙古", power: 800 },
+            "HK": { name: "香港", power: 700 }, "RB": { name: "反賊", power: 900 },
+            "CM": { name: "紅軍", power: 1200 }, "MC": { name: "滿洲", power: 600 },
+            "TB": { name: "西藏", power: 500 }, "KZ": { name: "哈薩克", power: 750 },
+            "UG": { name: "維吾爾", power: 550 }
+        };
+        const REWARD_KEYS = ["Money", "R1", "R2", "R3", "Y1", "Y2", "Y3", "B1", "B2", "B3", "G1", "G2", "G3", "Energy"];
+
+        // --- DOM ELEMENT REFERENCES ---
+        const cityDataInput = document.getElementById('cityDataInput');
+        const loadCitiesBtn = document.getElementById('loadCitiesBtn');
+        const cityCanvas = document.getElementById('cityCanvas');
+        const ctx = cityCanvas.getContext('2d');
+        const selectedCity1Display = document.getElementById('selectedCity1Display');
+        const selectedCity2Display = document.getElementById('selectedCity2Display');
+        const connectionTypeSelect = document.getElementById('connectionType');
+        const addConnectionBtn = document.getElementById('addConnectionBtn');
+        const clearSelectionBtn = document.getElementById('clearSelectionBtn');
+        const pathDataOutput = document.getElementById('pathDataOutput');
+        const generatePathJsonBtn = document.getElementById('generatePathJsonBtn');
+        const cityDetailsOutput = document.getElementById('cityDetailsOutput');
+        const generateCityDetailsJsonBtn = document.getElementById('generateCityDetailsJsonBtn');
+        
+        // --- City Details Editor Elements ---
+        const cityDetailsEditor = document.getElementById('city-details-editor');
+        const editingCityName = document.getElementById('editingCityName');
+        const npcSelector = document.getElementById('npc-selector');
+        const rewardsEditor = document.getElementById('rewards-editor');
+        const updateCityDetailsBtn = document.getElementById('updateCityDetailsBtn');
+
+        // --- STATE VARIABLES ---
+        let cities = [];
+        let connections = [];
+        let cityDetailsData = {}; // Object to store details for all cities
+        let selectedCity1 = null;
+        let selectedCity2 = null;
+
+        // --- CANVAS SETTINGS ---
+        const CANVAS_WIDTH = 1000, CANVAS_HEIGHT = 700, PADDING = 50, CITY_RADIUS = 4, CLICK_RADIUS = 6;
+        let scale = 1, gameMinX = 0, gameMinY = 0;
+
+        cityCanvas.width = CANVAS_WIDTH;
+        cityCanvas.height = CANVAS_HEIGHT;
+
+        // --- INITIALIZE UI ---
+        function initializeEditors() {
+            // Populate NPC Checkboxes
+            npcSelector.innerHTML = '';
+            for (const code in NPC_DEFINITIONS) {
+                const label = document.createElement('label');
+                label.innerHTML = `<input type="checkbox" name="npc" value="${code}"> ${NPC_DEFINITIONS[code].name}`;
+                npcSelector.appendChild(label);
+            }
+            // Populate Reward Inputs
+            rewardsEditor.innerHTML = '';
+            REWARD_KEYS.forEach(key => {
+                const label = document.createElement('label');
+                label.innerHTML = `${key}: <input type="number" id="reward-${key}" placeholder="0" style="width: 80%;">`;
+                rewardsEditor.appendChild(label);
+            });
+        }
+        initializeEditors();
+
+        // --- CORE FUNCTIONS ---
+        function calculateScaleAndTransform() {
+            if (cities.length === 0) return;
+            let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+            cities.forEach(c => {
+                minX = Math.min(minX, c.x_position); maxX = Math.max(maxX, c.x_position);
+                minY = Math.min(minY, c.y_position); maxY = Math.max(maxY, c.y_position);
+            });
+            gameMinX = minX; gameMinY = minY;
+            const scaleX = (CANVAS_WIDTH - 2 * PADDING) / (maxX - minX || 1);
+            const scaleY = (CANVAS_HEIGHT - 2 * PADDING) / (maxY - minY || 1);
+            scale = Math.min(scaleX, scaleY);
+            cities.forEach(city => {
+                city.canvasX = PADDING + (city.x_position - gameMinX) * scale;
+                city.canvasY = PADDING + (city.y_position - gameMinY) * scale;
+            });
+        }
+
+        function redrawAll() {
+            ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+            // Draw Connections
+            connections.forEach(conn => {
+                const from = cities.find(c => c.id === conn.from), to = cities.find(c => c.id === conn.to);
+                if (from && to) {
+                    ctx.beginPath();
+                    ctx.moveTo(from.canvasX, from.canvasY);
+                    ctx.lineTo(to.canvasX, to.canvasY);
+                    ctx.strokeStyle = '#aaa'; ctx.stroke();
+                }
+            });
+            // Draw Cities
+            cities.forEach(city => {
+                ctx.beginPath();
+                ctx.arc(city.canvasX, city.canvasY, CITY_RADIUS, 0, Math.PI * 2);
+                let color = 'black';
+                if (selectedCity1 && city.id === selectedCity1.id) color = 'blue';
+                if (selectedCity2 && city.id === selectedCity2.id) color = 'red';
+                ctx.fillStyle = color;
+                ctx.fill();
+            });
+        }
+        
+        function updateSelectedCityDisplays() {
+            selectedCity1Display.textContent = selectedCity1 ? `${selectedCity1.name} (ID:${selectedCity1.id})` : '-';
+            selectedCity1Display.className = selectedCity1 ? 'selected-city' : '';
+            selectedCity2Display.textContent = selectedCity2 ? `${selectedCity2.name} (ID:${selectedCity2.id})` : '-';
+            selectedCity2Display.className = selectedCity2 ? 'selected-city' : '';
+            addConnectionBtn.disabled = !(selectedCity1 && selectedCity2);
+
+            // Show/Hide City Details Editor
+            if (selectedCity1 && !selectedCity2) {
+                cityDetailsEditor.classList.remove('hidden');
+                editingCityName.textContent = selectedCity1.name;
+                populateDetailsForm(selectedCity1.id);
+            } else {
+                cityDetailsEditor.classList.add('hidden');
+            }
+        }
+
+        function populateDetailsForm(cityId) {
+            const details = cityDetailsData[cityId] || {};
+            // Populate NPCs
+            document.querySelectorAll('#npc-selector input[type="checkbox"]').forEach(checkbox => {
+                checkbox.checked = details.npc?.includes(checkbox.value) || false;
+            });
+            // Populate Rewards
+            REWARD_KEYS.forEach(key => {
+                document.getElementById(`reward-${key}`).value = details.rewards?.[key] || 0;
+            });
+        }
+
+        // --- EVENT LISTENERS ---
+        loadCitiesBtn.addEventListener('click', () => {
+            try {
+                cities = JSON.parse(cityDataInput.value);
+                connections = []; cityDetailsData = {};
+                updateSelectedCityDisplays();
+                calculateScaleAndTransform();
+                redrawAll();
+                alert(cities.length + ' cities loaded.');
+            } catch (e) { alert('Error parsing JSON: ' + e.message); }
+        });
+
+        cityCanvas.addEventListener('click', (event) => {
+            const rect = cityCanvas.getBoundingClientRect(), mouseX = event.clientX - rect.left, mouseY = event.clientY - rect.top;
+            const clickedCity = cities.find(c => Math.hypot(mouseX - c.canvasX, mouseY - c.canvasY) < CLICK_RADIUS);
+            if (!clickedCity) return;
+            
+            if (!selectedCity1) selectedCity1 = clickedCity;
+            else if (!selectedCity2 && clickedCity.id !== selectedCity1.id) selectedCity2 = clickedCity;
+            else { selectedCity1 = clickedCity; selectedCity2 = null; }
+            updateSelectedCityDisplays();
+            redrawAll();
+        });
+
+        clearSelectionBtn.addEventListener('click', () => {
+            selectedCity1 = null; selectedCity2 = null;
+            updateSelectedCityDisplays();
+            redrawAll();
+        });
+
+        addConnectionBtn.addEventListener('click', () => {
+            if (selectedCity1 && selectedCity2) {
+                connections.push({ from: selectedCity1.id, to: selectedCity2.id, type: connectionTypeSelect.value });
+                redrawAll();
+            }
+        });
+
+        updateCityDetailsBtn.addEventListener('click', () => {
+            if (!selectedCity1) return;
+            const cityId = selectedCity1.id;
+            
+            const selectedNpcs = Array.from(document.querySelectorAll('#npc-selector input:checked')).map(cb => cb.value);
+            const rewardsData = {};
+            REWARD_KEYS.forEach(key => {
+                const value = parseInt(document.getElementById(`reward-${key}`).value, 10);
+                if (value > 0) rewardsData[key] = value;
+            });
+
+            // Only add details if there's something to add
+            const details = {};
+            if (selectedNpcs.length > 0) details.npc = selectedNpcs;
+            if (Object.keys(rewardsData).length > 0) details.rewards = rewardsData;
+
+            if (Object.keys(details).length > 0) {
+                cityDetailsData[cityId] = details;
+            } else {
+                delete cityDetailsData[cityId]; // Clean up if no details are set
+            }
+
+            alert(`Details for ${selectedCity1.name} updated!`);
+        });
+
+        generatePathJsonBtn.addEventListener('click', () => {
+            pathDataOutput.value = JSON.stringify(connections, null, 2);
+        });
+
+        generateCityDetailsJsonBtn.addEventListener('click', () => {
+            cityDetailsOutput.value = JSON.stringify(cityDetailsData, null, 2);
+        });
+
+    </script>
+</body>
+</html>

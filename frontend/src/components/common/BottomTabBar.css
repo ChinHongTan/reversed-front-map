@@ -1,0 +1,39 @@
+.bottom-tab-bar-container {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 65px; /* Safe area for bottom notches can be added with padding-bottom: env(safe-area-inset-bottom); */
+    background-color: rgba(40, 40, 40, 0.75);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: space-around;
+    align-items: flex-start;
+    padding-top: 8px;
+    z-index: 1005;
+}
+
+.tab-bar-button {
+    background: transparent;
+    border: none;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.7rem;
+    padding: 0 10px;
+    transition: color 0.2s ease;
+}
+
+.tab-bar-button svg {
+    font-size: 1.5rem;
+}
+
+.tab-bar-button.is-active,
+.tab-bar-button:hover {
+    color: var(--color-text-primary);
+}

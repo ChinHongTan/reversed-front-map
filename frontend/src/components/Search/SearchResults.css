@@ -1,0 +1,28 @@
+/* src/components/SearchResults.css */
+.search-results-list {
+    padding-top: 10px;
+}
+
+.result-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: background-color 0.2s;
+    color: var(--color-text-primary);
+}
+
+.result-item:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.result-item-name {
+    font-weight: 500;
+}
+
+.result-item-nation {
+    font-size: 0.85em;
+    color: var(--color-text-secondary);
+}

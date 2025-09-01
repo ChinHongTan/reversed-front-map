@@ -1,0 +1,29 @@
+.search-history-list {
+    padding-top: 10px;
+}
+
+.history-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: background-color 0.2s;
+    color: var(--color-text-primary);
+}
+
+.history-item-empty {
+    padding: 20px 16px;
+    color: var(--color-text-secondary);
+    text-align: center;
+    font-style: italic;
+}
+
+.history-item:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.history-item .history-icon {
+    margin-right: 16px;
+    color: var(--color-text-secondary);
+}

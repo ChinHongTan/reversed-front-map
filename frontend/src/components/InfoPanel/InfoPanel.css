@@ -1,0 +1,193 @@
+/* src/components/InfoPanel.css */
+.info-section {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.info-section h4 {
+    margin-top: 0;
+    margin-bottom: 12px;
+    color: var(--color-text-secondary);
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: 10px;
+    font-weight: 500;
+}
+
+/* --- Pill Container Styles (New Flexbox structure) --- */
+.detail-item-pill {
+    display: flex;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    padding: 0 12px;
+    margin-bottom: 8px;
+    height: 40px;
+    box-sizing: border-box;
+    transition: background-color 0.2s;
+}
+
+.detail-left, .detail-right {
+    flex: 1; /* Each side takes up 50% of the space around the divider */
+    display: flex;
+    align-items: center;
+    overflow: hidden; /* Prevents long text from breaking layout */
+}
+
+.detail-right {
+    justify-content: flex-end; /* Aligns content to the right */
+}
+
+.detail-icon-space {
+    width: 24px;
+    height: 24px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    margin-right: 12px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.detail-name {
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.detail-divider {
+    border-left: 1px solid var(--color-border);
+    height: 20px;
+    margin: 0 12px;
+    flex-shrink: 0;
+}
+
+.detail-value {
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin-left: auto; /* Pushes it to the far right of its container */
+}
+
+.detail-visuals {
+    display: flex;
+    align-items: center;
+    gap: 4px; /* Space between dots */
+    margin-right: 8px; /* Space between dots and value */
+}
+
+/* Pill for the main controller, fully colored */
+.detail-item-pill.controller {
+    color: #fff;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.4);
+}
+
+/* --- NPC Styles --- */
+.npc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
+    gap: 10px;
+}
+
+.npc-item {
+    border-radius: 6px;
+    padding: 8px;
+    text-align: center;
+    font-size: 0.9em;
+    font-weight: 600;
+    color: #fff;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* --- Reward Styles --- */
+.rewards-list .detail-item-pill {
+    background-color: rgba(10, 10, 10, 0.4);
+}
+
+.reward-dots .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.color-money { background-color: #3498db; box-shadow: 0 0 6px #3498db; }
+.color-energy { background-color: #1abc9c; box-shadow: 0 0 6px #1abc9c; }
+.color-r { background-color: #e74c3c; box-shadow: 0 0 6px #e74c3c; }
+.color-y { background-color: #f1c40f; box-shadow: 0 0 6px #f1c40f; }
+.color-b { background-color: #3498db; box-shadow: 0 0 6px #3498db; }
+.color-g { background-color: #2ecc71; box-shadow: 0 0 6px #2ecc71; }
+
+.icon-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #444; /* Grey background */
+    color: #999;
+}
+
+.officers-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.officers-list .detail-item-pill {
+    background-color: rgba(0, 0, 0, 0.4);
+}
+
+.info-panel-content {
+    border-left: 3px solid transparent; /* Default border */
+    transition: border-color 0.3s ease;
+}
+
+.panel-subtitle {
+    margin: -10px 0 10px 0;
+    font-size: 0.9em;
+    font-style: italic;
+    color: var(--color-text-secondary);
+}
+
+.info-section h4 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.quote-block {
+    padding: 0 10px;
+}
+
+.quote-block p {
+    margin: 5px 0;
+    font-style: italic;
+    color: var(--color-text-primary);
+}
+
+.quote-block.commander-words p {
+    font-style: normal;
+    font-weight: 500;
+}
+
+.ministers-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.detail-item-pill.clickable {
+    cursor: pointer;
+    transition: background-color 0.2s ease, filter 0.2s ease, transform 0.2s ease;
+}
+
+.detail-item-pill.clickable:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    filter: brightness(1.5);
+    transform: translateY(-1px);
+}
