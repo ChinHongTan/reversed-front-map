@@ -110,10 +110,10 @@ function getCurrentDateString() {
 }
 
 async function logTimelapseEvent(eventData: { cityId: number; newController: any; oldController: any;}) {
-	if (process.env.NODE_ENV !== 'production') {
-		logger.debug(`[Timelapse] Skipping event log in non-production environment.`);
-		return;
-	}
+	if (process.env.NODE_ENV !== 'production' || !process.env.MONGODB_URI) {
+        logger.debug(`[Timelapse] Skipping event log in non-production or no-DB environment.`);
+        return;
+    }
 	const logDate = getCurrentDateString();
 	await ensureInitialStateForDate(logDate, citiesData);
 	try {

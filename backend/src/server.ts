@@ -30,6 +30,16 @@ const logger = pino({
     },
 });
 
+// 檢查 MONGODB_URI，如果存在才連接資料庫
+if (process.env.MONGODB_URI) {
+  connectDB().catch((error) => {
+    logger.error("[Server] Error connecting to database:", error);
+    process.exit(1);
+  });
+} else {
+  logger.warn("[Server] MONGODB_URI not found. Timelapse features will be disabled.");
+}
+
 
 connectDB().then(() => {
 	const app = express();
@@ -180,6 +190,10 @@ connectDB().then(() => {
 	});
 
 	app.get('/api/timelapse/logs', async (_req, res) => {
+        if (!process.env.MONGODB_URI) {
+            res.json([]); // 返回一個空陣列，這樣前端就不會出錯
+            return;
+        }
 		try {
 			const logDates = await TimelapseEvent.distinct('logDate');
 			logDates.sort((a: string, b: string) => b.localeCompare(a));
@@ -191,6 +205,10 @@ connectDB().then(() => {
 	});
 
 	app.get('/api/timelapse', async (req, res) => {
+        if (!process.env.MONGODB_URI) {
+            res.status(503).json({ error: 'Database not configured. Timelapse is disabled.' });
+            return;
+        }
 		const date = req.query.date as string;
 		if (!date) {
 			res.status(400).json({ error: 'Date parameter is required.' });

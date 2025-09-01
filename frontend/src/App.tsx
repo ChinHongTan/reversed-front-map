@@ -115,11 +115,11 @@ function App() {
                         setImportedData(jsonData);
                         ui.enterTimelapse();
                     } else {
-                        alert("Import failed: File is missing 'initialCities' or 'events'.");
+                        alert("導入失敗：檔案缺少 'initialCities' 或 'events'。");
                     }
                 } catch (error) {
                     console.error("Error parsing imported file:", error);
-                    alert("Import failed: Invalid file format.");
+                    alert("導入失敗：無效的檔案格式。");
                 }
             };
             reader.readAsText(file);
@@ -132,7 +132,7 @@ function App() {
             setImportedData(null);
             ui.enterTimelapse();
         } else {
-            alert("No historical data available in the database.\nYou can import a local file using the 'Import' button.");
+            alert("無歷史戰報資料，請確認後端資料庫已正確設定，或使用「導入戰報」功能。");
         }
     };
 
